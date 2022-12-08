@@ -9,11 +9,11 @@ This project intend to implement a State machine replication based on the paxos 
 Can be a class called charge point that have some states atributed to them, like:
 
 - ChargingPoint.waitingEV
-- ChargingPoint.beginsession
+- ChargingPoint.beginSession
 - ChargingPoint.authentication
 - CharginPoint.energyNegotiation
 - ChargingPoint.charging
-- ChargingPoint.endsession
+- ChargingPoint.endSession
 - ChargingPoint.restartingsession
 - ChargingPoint.failure
 
