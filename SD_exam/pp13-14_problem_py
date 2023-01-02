@@ -1,0 +1,15 @@
+# Exam from 2013/2014
+#Write a program that 1 -> Collects values from temperature sensors(using the producer/consumer paradigm) and that 2 -> provides the average temperature to clients
+#sensorReads = []
+
+sensorRead = 0.0
+sensorSum = 0.0
+sensorAvr = 0.0
+count=0
+while True:
+    sensorRead = float(input("Input value: "))
+    #sensorReads.append(sensorRead)
+    count+=1
+    sensorSum+=sensorRead
+    sensorAvr = sensorSum / count
+    print("Input average: ",sensorAvr)
