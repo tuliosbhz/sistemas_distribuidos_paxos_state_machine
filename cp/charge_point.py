@@ -36,80 +36,80 @@ from fsm import stateBoot
 import random
 
 class ChargePoint(cp):
+    def __init__(self):
+        self.sessionId: str = None
+        self.heartbeatInterval: int = None
+        self.newSessionId: bool = False
+        self.sessionStatus: str = None
+        self.powerUpStatus :bool = None
+        self.evseId: int = None
+        self.tx_start_point: str = None
+        self.tx_stop_point: str = None
+        self.remoteStartId: int = None
+        self.id_token : str = None
+        self.id_token_type: str = None
+        self.id_token_info: str = None
+        self.transaction_id: str = None
+        self.chargingProfile: dict = None
+        self.chargingProfileID: int = None
+        # EventTypetype: "enum": ["Ended", "Started", "Updated"]
+        self.eventType: str = None
+        # TriggerReasonType: "Authorized","CablePluggedIn","ChargingRateChanged","ChargingStateChanged","Deauthorized","EnergyLimitReached","EVCommunicationLost","EVConnectTimeout","MeterValueClock",
+        # "MeterValuePeriodic","TimeLimitReached","Trigger","UnlockCommand","StopAuthorized","EVDeparted","EVDetected","RemoteStop","RemoteStart","AbnormalCondition","SignedDataReceived","ResetCommand"
+        self.triggerReason: str = None
+        # ConnectorStatusType: "Available", "Occupied", "Reserved", "Unavailable", "Faulted"
+        self.connectorStatus: str = None
+        # ChargingStateType: "Charging", "EVConnected","SuspendedEV","SuspendedEVSE","Idle"
+        self.chargingState: str = None
+        self.energyAmount: int = None #Total energy value that must be transfered to charge the EV
+        self.EVSENominalVoltage: str = None
+        self.EVSENominalPower: str = None
+        self.meterValues: dict = None
+        self.meterValuesPeriod: float = None
+        self.acChargingParameters: dict = None
+        self.chargingInterval: int = None
+        self.scheduleInterval = []
+        self.relayStatus: int = None
+        self.llc_state: str = None
+    #   error_state = -1, // [V2G-537]
+    #   wait_supportedAppProtocolReq = 0,
+    #   process_supportedAppProtocolReq = 1,
+    #   wait_SessionSetupReq = 2,
+    #   process_SessionSetupReq = 3,
+    #   wait_ServiceDiscoveryReq = 4,
+    #   process_ServiceDiscoveryReq = 5,
+    #   wait_ServicePaymentSelectionReqORServiceDetailReq = 6,
+    #   process_ServicePaymentSelectionReqORServiceDetailReq = 7,
+    #   wait_PaymentDetailsReq = 8,
+    #   process_PaymentDetailsReq = 9,
+    #   wait_AuthorizationReq = 10,
+    #   process_AuthorizationReq = 11,
+    #   wait_ChargeParameterDiscoveryReq = 12,
+    #   process_ChargeParameterDiscoveryReq = 13,
+    #   wait_PowerDeliveryReq = 14,
+    #   process_PowerDeliveryReq = 15,
+    #   wait_ChargingStatusReq = 16,
+    #   process_ChargingStatusReq = 17,
+    #   wait_MeteringReceiptReq = 18,
+    #   process_MeteringReceiptReq = 19,
+    #   wait_SessionStopReq = 20,
+    #   process_SessionStopReq = 21,
+        self.hlc_state: int = 0
+        self.max_schedule_tuples: int = None
+        self.curr_schedule_index: int = None
+        #StateVariables
+        self.previousState: State = None
+        self.changedState: bool = None
 
-    heartbeatInterval: int = None
-    sessionId: str = None
-    newSessionId: bool = False
-    sessionStatus: str = None
-    powerUpStatus :bool = None
-    evseId: int = None
-    tx_start_point: str = None
-    tx_stop_point: str = None
-    remoteStartId: int = None
-    id_token : str = None
-    id_token_type: str = None
-    id_token_info: str = None
-    transaction_id: str = None
-    chargingProfile: dict = None
-    chargingProfileID: int = None
-    # EventTypetype: "enum": ["Ended", "Started", "Updated"]
-    eventType: str = None
-    # TriggerReasonType: "Authorized","CablePluggedIn","ChargingRateChanged","ChargingStateChanged","Deauthorized","EnergyLimitReached","EVCommunicationLost","EVConnectTimeout","MeterValueClock",
-	# "MeterValuePeriodic","TimeLimitReached","Trigger","UnlockCommand","StopAuthorized","EVDeparted","EVDetected","RemoteStop","RemoteStart","AbnormalCondition","SignedDataReceived","ResetCommand"
-    triggerReason: str = None
-    # ConnectorStatusType: "Available", "Occupied", "Reserved", "Unavailable", "Faulted"
-    connectorStatus: str = None
-    # ChargingStateType: "Charging", "EVConnected","SuspendedEV","SuspendedEVSE","Idle"
-    chargingState: str = None
-    energyAmount: int = None #Total energy value that must be transfered to charge the EV
-    EVSENominalVoltage: str = None
-    EVSENominalPower: str = None
-    meterValues: dict = None
-    meterValuesPeriod: float = None
-    acChargingParameters: dict = None
-    chargingInterval: int = None
-    scheduleInterval = []
-    relayStatus: int = None
-    llc_state: str = None
-#   error_state = -1, // [V2G-537]
-#   wait_supportedAppProtocolReq = 0,
-#   process_supportedAppProtocolReq = 1,
-#   wait_SessionSetupReq = 2,
-#   process_SessionSetupReq = 3,
-#   wait_ServiceDiscoveryReq = 4,
-#   process_ServiceDiscoveryReq = 5,
-#   wait_ServicePaymentSelectionReqORServiceDetailReq = 6,
-#   process_ServicePaymentSelectionReqORServiceDetailReq = 7,
-#   wait_PaymentDetailsReq = 8,
-#   process_PaymentDetailsReq = 9,
-#   wait_AuthorizationReq = 10,
-#   process_AuthorizationReq = 11,
-#   wait_ChargeParameterDiscoveryReq = 12,
-#   process_ChargeParameterDiscoveryReq = 13,
-#   wait_PowerDeliveryReq = 14,
-#   process_PowerDeliveryReq = 15,
-#   wait_ChargingStatusReq = 16,
-#   process_ChargingStatusReq = 17,
-#   wait_MeteringReceiptReq = 18,
-#   process_MeteringReceiptReq = 19,
-#   wait_SessionStopReq = 20,
-#   process_SessionStopReq = 21,
-    hlc_state: int = 0
-    max_schedule_tuples: int = None
-    curr_schedule_index: int = None
-    
-    #StateVariables
-    previousState: State = None
-    changedState: bool = None
-
-    #Flags for message received
-    on_getvariables: bool = None
-    on_onsetchargingprofile: bool = None
-    on_getbasereport: bool = None
-    on_reset: bool = None
-    on_requeststarttransaction: bool = None
-    on_requeststoptransaction: bool = None
-    on_sendmetervalues: bool = None
+        #Flags for message received
+        self.on_getvariables: bool = None
+        self.on_onsetchargingprofile: bool = None
+        self.on_getbasereport: bool = None
+        self.on_reset: bool = None
+        self.on_requeststarttransaction: bool = None
+        self.on_requeststoptransaction: bool = None
+        self.on_sendmetervalues: bool = None
+        self.initialization_meter_values()
 
     def initialization_meter_values(self, energy = 0, voltage=0,frequency=0,current=0,power=0):
         self.meterValues = [
@@ -168,8 +168,6 @@ class ChargePoint(cp):
                 continue
             await asyncio.sleep(5)
                 
-
-
 #################################################################################################### Interface to FSM ################################################################################################
 
     #Variable that points to instantiation of state
@@ -219,7 +217,6 @@ class ChargePoint(cp):
         self.lowlevel2ocpp()
         #if newSessionId == True:
         #    ocppdb.write_authorize_token(idTokenInfo= "Rejected", lastsessionid=self.sessionId)
-        self.initialization_meter_values()
         log.info("SessionID in BootNotification: %s", self.sessionId)
         log.info("Session Status: %s", self.sessionStatus)
         
