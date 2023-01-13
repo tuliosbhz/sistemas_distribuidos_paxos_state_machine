@@ -66,8 +66,6 @@ class stateBoot(State):
 
     async def send_message_to_CSMS(self):
         log.info("STATE: Boot")
-        #Initialize authorization in database
-        #ocppdb.write_authorize_token(idTokenInfo= "Rejected", lastsessionid=self.charge_point.sessionId)
         log.info("Boot notification message sended")
         await self.transition()
     
@@ -87,9 +85,7 @@ class stateWaitCar(State):
         await self.transition()
 
     async def transition(self):
-        if self.charge_point.on_requeststarttransaction == True:
-            self.charge_point.setStateCP(stateRemoteRequestStart())
-        elif self.charge_point.connectorStatus == "Occupied":
+        if self.charge_point.connectorStatus == "Occupied":
             self.charge_point.triggerReason = "CablePluggedIn"
             await self.charge_point.send_transaction_event(charging_state = self.charge_point.chargingState, event_type='Updated', trigger_reason=self.charge_point.triggerReason)
             self.charge_point.setStateCP(stateWaitSession())
@@ -109,10 +105,7 @@ class stateWaitSession(State):
         await self.transition()
 
     async def transition(self):
-        #Conditions to go to the next state
-        if self.charge_point.on_requeststarttransaction == True:
-             self.charge_point.setStateCP(stateRemoteRequestStart())
-        elif self.charge_point.connectorStatus == "Faulted":
+        if self.charge_point.connectorStatus == "Faulted":
             self.charge_point.setStateCP(stateError())
         elif self.charge_point.connectorStatus == "Charging":
             if await self.check_mode():
@@ -176,18 +169,8 @@ class stateSetup(State):
         await self.transition()
  
     async def transition(self):
-        if self.charge_point.sessionStatus == ("Setup" or "EvNeedsStarted") and self.charge_point.remoteStartId != None: #Remote_Start are in control
-            self.charge_point.setStateCP(stateNotifyEvNeeds())
-        # elif self.charge_point.sessionStatus == ("Setup" or "EvNeedsStarted"): #wait_ServiceDiscoveryReq(End of session Setup)
-        #     self.triggerReason = "EVDetected"
-        elif self.charge_point.hlc_state >= 10: #wait_AuthorizationReq
+        if self.charge_point.hlc_state >= 10: #wait_AuthorizationReq
             self.charge_point.setStateCP(stateAuthorization())
-        elif self.charge_point.sessionStatus == "Charging" and self.charge_point.connectorStatus == "Occupied":
-            self.charge_point.setStateCP(stateNotifyEvNeeds())
-        elif self.charge_point.sessionStatus == "Charging" and self.charge_point.connectorStatus == "Charging":
-            self.charge_point.setStateCP(stateEnergyDelivery())
-        elif self.charge_point.sessionStatus == "Finished" or self.charge_point.sessionStatus == "NotInitialized" or self.charge_point.connectorStatus == "Available":
-            self.charge_point.setStateCP(stateEndTransaction())
 
 class stateAuthorization(State):
     
@@ -444,62 +427,3 @@ class stateError(State):
         if self.charge_point.chargingState != "SuspendedEVSE":
             await self.charge_point.send_transaction_event(charging_state = self.charge_point.chargingState, event_type='Ended', trigger_reason='ChargingStateChanged')
             self.charge_point.setStateCP(stateWaitCar())
-
-# When the start is from a external trigger from the normal actos 
-class stateRemoteRequestStart(State):
-    
-    response: str
-
-    async def send_message_to_CSMS(self) :
-        if self.charge_point.on_requeststarttransaction == True:
-            self.charge_point.triggerReason = 'RemoteStart'
-            self.charge_point.on_requeststarttransaction = False # To enter just once in this state
-        
-        log.info("Charging Point: Remote Request Start: ", self.charge_point.triggerReason)
-        await self.transition()
-    # if up button is pushed nothing should happen
-    async def transition(self):
-        log.info("Transition from Idle State to any")
-
-        if self.charge_point.id_token_type == "Central":
-            self.charge_point.eventType = "Updated"
-            await self.charge_point.send_transaction_event(charging_state = self.charge_point.chargingState, event_type=self.charge_point.eventType, trigger_reason=self.charge_point.triggerReason)
-            self.charge_point.setStateCP(stateWaitCar())
-        else:
-            self.charge_point.setStateCP(stateAuthorization())
-        #Condition to go to the next state
-        #TODO: Create conditions to go to different states accordanly next event
-        #if self.charge_point.on_requeststarttransaction == False:
-            #TODO: GO TO PREVIOUS STATE
-        #    self.charge_point.setStateCP(stateRemoteRequestStart())
-
-
-# class stateMeterValues(State):
-#     # If the down button is pushed when it is already on the first floor, nothing should happen
-#     async def send_message_to_CSMS(self):
-
-#         self.charge_point.meterValues[0]['timestamp'] = datetime.utcnow().strftime('%Y-%m-%d T %H:%M:%S ')
-
-#         # self.charge_point.meterValues[0]['sampled_value'][1]['value'] = random.randint(225,250)
-#         # self.charge_point.meterValues[0]['sampled_value'][2]['value'] = random.randint(49,51)
-#         # if self.charge_point.chargingProfile['charging_schedule'][self.charge_point.curr_schedule_index]['charging_rate_unit'] == 'A':
-#         #     self.charge_point.meterValues[0]['sampled_value'][3]['value'] = self.charge_point.chargingProfile['charging_schedule'][self.charge_point.curr_schedule_index]['charging_schedule_period'][0]['limit'] + random.randint(-2,1)
-#         #     self.charge_point.meterValues[0]['sampled_value'][4]['value'] = self.charge_point.meterValues[0]['sampled_value'][3]['value'] * self.charge_point.meterValues[0]['sampled_value'][1]['value']
-#         # elif self.charge_point.chargingProfile['charging_schedule'][self.charge_point.curr_schedule_index]['charging_rate_unit'] == 'W':
-#         #     power = self.charge_point.chargingProfile['charging_schedule'][self.charge_point.curr_schedule_index]['charging_schedule_period'][0]['limit']
-#         #     voltage = self.charge_point.meterValues[0]['sampled_value'][1]['value']
-#         #     self.charge_point.meterValues[0]['sampled_value'][3]['value'] = int(power / voltage)
-#         #     self.charge_point.meterValues[0]['sampled_value'][4]['value'] = power + random.randint(-1, +1)
-#         # self.charge_point.meterValues[0]['sampled_value'][0]['value'] += self.charge_point.meterValues[0]['sampled_value'][4]['value'] * self.charge_point.heartbeatInterval/(3600*2)
-        
-#         await self.charge_point.send_meter_values()
-#         #self.charge_point.on_sendmetervalues = False
-#         await self.transition()
-    
-#     # if up button is pushed, move upwards then it changes its state to second floor.
-#     async def transition(self):
-#         if self.charge_point.triggerReason == "EnergyLimitReached":
-#             self.charge_point.on_sendmetervalues = False
-#             self.charge_point.setStateCP(stateEndTransaction())
-#         else:
-#             self.charge_point.setStateCP(stateEnergyDelivery())

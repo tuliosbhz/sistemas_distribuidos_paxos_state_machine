@@ -26,6 +26,10 @@ Can be a class called charge point that have some states atributed to them, like
 
 ### EVSE behaviour emulator
 
+The behaviour of the EVSE in High level communication is defined by the image bellow, an fsm based on ISO 15118-2 messages
+
+![SECC States](SECCStates.png)
+
 Can be a class called charge point that have some states atributed to them, like:
 
 - ChargingPoint.waitingEV
