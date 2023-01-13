@@ -4,10 +4,9 @@ import threading
 import logging as log
 import time
 
-
-# Constants
-NUM_CHARGING_STATIONS = 3
-PORT = 18500
+# Script settings
+CHARGING_STATIONS_COUNT = 3
+BASE_PORT = 18500
 
 # Charging station class
 class ChargingStation:
@@ -38,18 +37,18 @@ class ChargingStation:
 class CentralSystem:
   def __init__(self):
     self.proposal_num = 0
-    self.charging_stations = [ChargingStation(i) for i in range(NUM_CHARGING_STATIONS)]
+    self.charging_stations_ids = [x for x in range(CHARGING_STATIONS_COUNT)]
 
   def reserve_charging_station(self, station_id, start_time, end_time):
     self.proposal_num += 1
 
     # Send prepare message to all charging stations
     responses = []
-    for station in self.charging_stations:
-      print(f"Going to connect to {station.station_id}")
+    for station_id in self.charging_stations_ids:
+      print(f"Going to connect to {station_id}")
       s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
       try:
-        s.connect(("localhost", PORT + station.station_id))
+        s.connect(("localhost", BASE_PORT + station_id))
         s.sendall(json.dumps(("prepare", self.proposal_num)).encode())
         response = json.loads(s.recv(1024).decode())
         s.close()
@@ -62,14 +61,14 @@ class CentralSystem:
 
     # Check for majority of promise responses
     num_promises = sum(response[0] == "promise" for response in responses)
-    if num_promises > NUM_CHARGING_STATIONS / 2:
+    if num_promises > CHARGING_STATIONS_COUNT / 2:
       # Send accept message to all charging stations
       reservation = (station_id, start_time, end_time)
-      for station in self.charging_stations:
-        print(f"Sending to {station.station_id} the accept")
+      for station_id in self.charging_stations_ids:
+        print(f"Sending to {station_id} the accept")
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-          s.connect(("localhost", PORT + station.station_id))
+          s.connect(("localhost", BASE_PORT + station_id))
           s.sendall(json.dumps(("accept", self.proposal_num, reservation)).encode())
           s.close()
         except:
@@ -80,7 +79,7 @@ class CentralSystem:
       for response in responses:
         if response[0] == "acknowledge":
           num_acknowledgments += 1
-      if num_acknowledgments > NUM_CHARGING_STATIONS / 2:
+      if num_acknowledgments > CHARGING_STATIONS_COUNT / 2:
         # Consensus reached
         return True
     return False
@@ -92,11 +91,11 @@ class ChargingStationServer:
     self.charging_station = ChargingStation(station_id)
 
   def run(self):
-    # Create socket and bind to port
+    # Create socket and bind to BASE_port
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
     #s.settimeout(50)
-    s.bind(("localhost", PORT + self.station_id))
+    s.bind(("localhost", BASE_PORT + self.station_id))
     s.listen()
     time.sleep(1)
     # Wait for incoming connections
@@ -125,21 +124,19 @@ class ChargingStationServer:
         conn.close()
       time.sleep(0.5)
 
-node1 = ChargingStationServer(0)
-node2 = ChargingStationServer(1)
-node3 = ChargingStationServer(2)
-
 nodeCentral = CentralSystem()
-
-task_node1 = threading.Thread(target=node1.run)
-task_node2 = threading.Thread(target=node2.run)
-task_node3 = threading.Thread(target=node3.run)
 task_central = threading.Thread(target=nodeCentral.reserve_charging_station, args=(0,0,3,))
 
-task_node1.start()
-task_node2.start()
-task_node3.start()
+nodes = []
+tasks = []
+
+for i in range(CHARGING_STATIONS_COUNT):
+  nodes.append(ChargingStationServer(i))
+  tasks.append(threading.Thread(target=nodes[i].run))
+  tasks[i].start()
+
 time.sleep(2)
+
 task_central.start()
 
 # while True:
