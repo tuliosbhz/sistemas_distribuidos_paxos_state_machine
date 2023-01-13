@@ -4,9 +4,10 @@ import threading
 import logging as log
 import time
 
-log.basicConfig
+
 # Constants
 NUM_CHARGING_STATIONS = 3
+PORT = 18500
 
 # Charging station class
 class ChargingStation:
@@ -45,18 +46,19 @@ class CentralSystem:
     # Send prepare message to all charging stations
     responses = []
     for station in self.charging_stations:
-      log.info(f"Going to connect to {station.station_id}")
+      print(f"Going to connect to {station.station_id}")
       s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
       try:
-        s.connect(("localhost", station.station_id))
+        s.connect(("localhost", PORT + station.station_id))
         s.sendall(json.dumps(("prepare", self.proposal_num)).encode())
         response = json.loads(s.recv(1024).decode())
         s.close()
         responses.append(response)
+        print("Receveid response from prepare:", responses)
       except:
-        log.info("Error trying to connect")
-    else:
-      log.info("Station ID does not exist")
+        print("Error trying to connect")
+    # else:
+    #   print("Station ID does not exist")
 
     # Check for majority of promise responses
     num_promises = sum(response[0] == "promise" for response in responses)
@@ -64,14 +66,14 @@ class CentralSystem:
       # Send accept message to all charging stations
       reservation = (station_id, start_time, end_time)
       for station in self.charging_stations:
-        log.info(f"Sending to {station.station_id} the accept")
+        print(f"Sending to {station.station_id} the accept")
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-          s.connect(("localhost", station.station_id))
+          s.connect(("localhost", PORT + station.station_id))
           s.sendall(json.dumps(("accept", self.proposal_num, reservation)).encode())
           s.close()
         except:
-          log.info("Error trying to connect")
+          print("Error trying to connect")
 
       # Wait for majority of acknowledge responses
       num_acknowledgments = 0
@@ -92,11 +94,11 @@ class ChargingStationServer:
   def run(self):
     # Create socket and bind to port
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    #s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
     #s.settimeout(50)
-    s.bind(("localhost", self.station_id))
+    s.bind(("localhost", PORT + self.station_id))
     s.listen()
-
+    time.sleep(1)
     # Wait for incoming connections
     while True:
       try:
@@ -108,10 +110,10 @@ class ChargingStationServer:
         request = json.loads(data.decode())
         request_type = request[0]
         if request_type == "prepare":
-          log.info(f"Node{self.station_id} receveid prepare message")
+          print(f"Node{self.station_id} receveid prepare message")
           response = self.charging_station.on_prepare(request[1])
         elif request_type == "accept":
-          log.info(f"Node{self.station_id} receveid prepare message")
+          print(f"Node{self.station_id} receveid accept message")
           response = self.charging_station.on_accept(request[1], request[2])
         else:
           response = ("error",)
@@ -119,7 +121,7 @@ class ChargingStationServer:
         conn.sendall(json.dumps(response).encode())
         conn.close()
       except TimeoutError:
-        log.info("Timeout")
+        print("Timeout")
         conn.close()
       time.sleep(0.5)
 
@@ -144,6 +146,6 @@ task_central.start()
 #   try:
 #     nodeCentral.reserve_charging_station(station_id=0, start_time=0, end_time=3)
 #   except ConnectionRefusedError:
-#     log.info("Connection refused")
+#     print("Connection refused")
 #     continue
 #   time.sleep(1)
