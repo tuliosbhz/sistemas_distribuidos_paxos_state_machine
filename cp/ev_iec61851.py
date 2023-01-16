@@ -17,11 +17,15 @@ class EvseBasic:
         self.token_info = "Rejected"
         self.chargemode = 0
     
+    def ev_behaviour(self):
+        #Criar aqui o comportamento de um usuário ou do EV de conectar o plug, desconectar ou etc
     def routine(self):
         while True:
             plug_ev = input("Plug connected ? ")
             if "yes" in plug_ev:
                 self.llc_state = 'B'
+            else:
+                self.llc_state = 'A'
             if self.llc_state != self.prev_llc_state:
                 new_llc_state = True
                 self.prev_llc_state = self.llc_state
@@ -57,6 +61,5 @@ class EvseBasic:
 
 evse = EvseBasic()
 evse.routine()
-yes# %%
 
 # %%

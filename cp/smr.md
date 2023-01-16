@@ -1,0 +1,6 @@
+# Explanation of the code smr.py
+In this script, I've used the asyncio library to handle the communication between the EVSEs and the cluster. 
+The EVSE class uses the on decorator from the OCPP library to handle the StartTransaction and StopTransaction calls from the EV. The class also uses the ChargePoint class from the library to send the redirect message to the EV in the redirect_ev method and uses the async keyword to be able to run the function asynchronously
+The Cluster class uses asyncio to handle the connection to the cluster and send the state update messages.
+It's important to note that this script is just an example and would require additional error handling and testing to be used in a production environment. Additionally, the Paxos algorithm is not implemented here, it's important to use a library or implement it yourself to ensure the consistency of the shared state across the cluster.
+You should also change the OCPP library functions to the 2.0.1 version, you can check the documentation of the library to see which functions are available in this version.
